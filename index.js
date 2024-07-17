@@ -43,12 +43,12 @@ async function run() {
     // Post from signin users
     app.post('/users', async (req, res) => {
       // for hashing pin or password use bcrypt.js
-      const salt =  bcrypt.genSaltSync(10);
+      const salt = bcrypt.genSaltSync(10);
       const secPassword = bcrypt.hashSync(req.body.password, salt);
       req.body.password = secPassword;
 
       const user = req.body;
-      
+
       const query = { email: user.email }
       const alreadyExist = await userCollection.findOne(query);
       if (alreadyExist) {
@@ -57,6 +57,44 @@ async function run() {
 
       const result = await userCollection.insertOne(user);
       res.send(result);
+
+    })
+
+
+    // POST method using for login page
+    app.post('/loginUser', async (req, res) => {
+      const userInfo = req.body;
+      const emailOrPhone = userInfo.userEmailOrPhone;
+
+
+      // find specific user from user collection
+      const matchUser = await userCollection.findOne({ email: emailOrPhone })
+      const matchUser2 = await userCollection.findOne({ phone: emailOrPhone })
+
+      const getSpecificUser = matchUser || matchUser2;
+      console.log(getSpecificUser);
+
+      if(getSpecificUser){
+        const pin = userInfo.password;
+
+        bcrypt.compare(pin, getSpecificUser.password, function(err, response) {
+          // res === true
+          if(err){
+            res.send({message: "Error ! something wrong"})
+          }
+          else if(response ){
+            res.send({message: "Pin is correct"})
+          }
+          else {
+            res.send({message: "Pin is incorrect"})
+          }
+      });
+      }
+
+      else{
+        console.log("user does not exist");
+        res.send({message: "user does not exist"})
+      }
 
     })
 
